@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>装修预算账本</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#2E4A3B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="装修账本">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" href="./icon-192.png">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#F5F2EB; --card:#FFFFFF; --ink:#23271F; --ink2:#5E6358; --ink3:#90948A;
+    --line:#E6E1D5; --line-soft:#F1EEE7; --green:#2E4A3B; --green2:#41654F; --green-soft:#EAEEE8;
+    --orange:#CF6B3F; --orange-soft:#FBEEE5; --red:#B4462F; --amber:#A8791A;
+    --radius:20px; --radius-sm:14px;
+    --shadow:0 1px 2px rgba(40,40,30,.04),0 8px 24px rgba(40,40,30,.05);
+  }
+  html{font-size:16.5px}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:.94rem/1.62 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+  .wrap{max-width:1120px;margin:0 auto;padding:2.2rem 1.5rem 6rem}
+
+  /* ---------- header ---------- */
+  .top{border-bottom:1px solid var(--line);padding-bottom:1.2rem;margin-bottom:1.4rem}
+  .top-row{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
+  h1{font-family:"Songti SC","Noto Serif SC",Georgia,serif;font-size:2.45rem;line-height:1.12;
+     letter-spacing:-.01em;margin:0 0 .45rem}
+  .sub{color:var(--ink2);font-size:.82rem}
+  .top-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .pill{border:1px solid var(--line);background:#fff;border-radius:99px;padding:.6rem 1.05rem;
+        font-size:.82rem;cursor:pointer;white-space:nowrap;font-family:inherit;color:var(--ink);
+        transition:border-color .16s,box-shadow .16s,transform .1s}
+  .pill:hover{border-color:#CFC9B9;box-shadow:var(--shadow)}
+  .pill:active{transform:scale(.98)}
+  .pill b{font-variant-numeric:tabular-nums;font-weight:600}
+
+  /* 字号 */
+  .fs{display:flex;align-items:center;gap:.25rem;border:1px solid var(--line);background:#fff;
+      border-radius:99px;padding:.25rem .3rem}
+  .fs button{border:none;background:transparent;font-family:inherit;font-size:.78rem;color:var(--ink2);
+      padding:.35rem .6rem;border-radius:99px;cursor:pointer;line-height:1}
+  .fs button.on{background:var(--green);color:#fff}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:flex;gap:.45rem;margin-bottom:1.35rem;flex-wrap:wrap}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:99px;padding:.58rem 1.25rem;
+       font-size:.88rem;cursor:pointer;color:var(--ink2);font-family:inherit;
+       transition:all .16s;white-space:nowrap}
+  .tab:hover{border-color:#CFC9B9}
+  .tab.active{background:var(--green);border-color:var(--green);color:#fff}
+
+  /* ---------- kpi ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.85rem;margin-bottom:1rem}
+  .kpi{background:var(--card);border-radius:var(--radius);padding:1.15rem 1.25rem;
+       box-shadow:var(--shadow);min-width:0}
+  .kpi.dark{background:var(--green);color:#fff;box-shadow:none}
+  .kpi .label{font-size:.74rem;color:var(--ink3);margin-bottom:.5rem}
+  .kpi.dark .label{color:#B7C9BE}
+  .kpi .value{font-size:1.72rem;font-weight:700;font-variant-numeric:tabular-nums;
+              letter-spacing:-.02em;line-height:1.25;word-break:keep-all}
+  .kpi .foot{font-size:.7rem;color:var(--ink3);margin-top:.5rem}
+  .kpi.dark .foot{color:#B7C9BE}
+
+  .grid2{display:grid;grid-template-columns:1.55fr 1fr;gap:1rem;align-items:start}
+  .card{background:var(--card);border-radius:var(--radius);padding:1.3rem 1.4rem;box-shadow:var(--shadow)}
+  .card.control{background:var(--green-soft);box-shadow:none}
+  .eyebrow{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:.3rem}
+  .card h2{font-size:1.12rem;margin:0 0 .95rem;font-family:"Songti SC",Georgia,serif}
+
+  /* ---------- category rows ---------- */
+  .catrow{display:grid;grid-template-columns:minmax(0,1fr) 6.6rem 6.4rem;gap:.7rem;align-items:center;
+          padding:.62rem 0;border-bottom:1px solid var(--line-soft)}
+  .catrow:last-child{border-bottom:none}
+  .catname{font-size:.86rem;font-weight:600;display:flex;justify-content:space-between;gap:.5rem}
+  .catname .pct{font-weight:500;color:var(--ink3);font-variant-numeric:tabular-nums;font-size:.76rem}
+  .bar{height:.42rem;background:#EDEAE1;border-radius:99px;overflow:hidden;margin-top:.4rem}
+  .bar>i{display:block;height:100%;background:var(--green2);border-radius:99px;transition:width .3s}
+  .bar.warn>i{background:var(--orange)}
+  .bar.over>i{background:var(--red)}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-size:.84rem}
+  .num .sub2{font-size:.72rem;color:var(--ink3);margin-top:.15rem}
+  .over-txt{color:var(--red);font-weight:600}
+
+  /* ---------- control ---------- */
+  .ctrl{border-top:1px solid #D8DFD6;padding:.72rem 0;font-size:.85rem;color:#31392F;display:flex;gap:.5rem}
+  .ctrl:first-of-type{border-top:none;padding-top:0}
+  .ctrl b{font-variant-numeric:tabular-nums}
+  .ctrlnum{color:var(--ink3);flex:0 0 auto;font-size:.8rem;padding-top:.05rem}
+  .note{margin-top:.9rem;background:var(--orange-soft);border-radius:var(--radius-sm);
+        padding:.85rem 1rem;font-size:.78rem;color:#7A4326;line-height:1.7}
+
+  /* ---------- toolbar / tables ---------- */
+  .toolbar{display:flex;gap:.55rem;align-items:center;margin:0 0 1rem;flex-wrap:wrap}
+  .toolbar input[type=search],.toolbar input[type=text]{flex:1 1 15rem;min-width:11rem;
+     border:1px solid var(--line);background:#fff;border-radius:var(--radius-sm);padding:.6rem .85rem;
+     font-size:.86rem;font-family:inherit;outline:none}
+  .toolbar input:focus{border-color:#C9C3B2}
+  select{border:1px solid var(--line);background:#fff;border-radius:var(--radius-sm);padding:.6rem .7rem;
+         font-size:.86rem;font-family:inherit;outline:none;cursor:pointer;max-width:11rem}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:var(--radius-sm);padding:.6rem .95rem;
+       font-size:.86rem;cursor:pointer;font-family:inherit;transition:all .16s;white-space:nowrap;color:var(--ink)}
+  .btn:hover{border-color:#C9C3B2}
+  .btn:active{transform:scale(.985)}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.primary:hover{background:var(--green2)}
+  .btn.orange{background:var(--orange);border-color:var(--orange);color:#fff}
+  .btn.mini{padding:.3rem .65rem;font-size:.76rem;border-radius:.6rem}
+  .btn.danger{color:var(--red);border-color:#EBD9D2}
+  .tablecard{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:.72rem;font-weight:500;color:var(--ink3);text-align:left;padding:.85rem 1rem;
+     border-bottom:1px solid var(--line);background:#FCFBF8;white-space:nowrap}
+  td{padding:.85rem 1rem;border-bottom:1px solid var(--line-soft);font-size:.86rem;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .b{font-weight:600}
+  .sub-cell{font-size:.72rem;color:var(--ink3);margin-top:.12rem}
+  .empty{padding:2.6rem 1rem;text-align:center;color:var(--ink3);font-size:.85rem}
+  tfoot td{border-top:1px solid var(--line);font-weight:600;background:#FCFBF8}
+  .tag{display:inline-block;font-size:.7rem;padding:.14rem .55rem;border-radius:99px;
+       background:#EFF2ED;color:var(--green2);white-space:nowrap}
+  .tag.over{background:var(--orange-soft);color:var(--red)}
+  .tag.warn{background:#FCF3E3;color:var(--amber)}
+  .hint{font-size:.74rem;color:var(--ink3);line-height:1.7}
+
+  /* ---------- fab ---------- */
+  .fab{display:none}
+  .hide-desktop{display:none}
+
+  /* ---------- modal ---------- */
+  .mask{position:fixed;inset:0;background:rgba(30,32,26,.45);display:none;align-items:center;
+        justify-content:center;padding:1.2rem;z-index:50;backdrop-filter:blur(2px)}
+  .mask.show{display:flex}
+  .modal{background:#fff;border-radius:1.4rem;width:100%;max-width:34rem;max-height:90vh;overflow:auto;
+         padding:1.5rem 1.6rem}
+  .modal h3{margin:0 0 .2rem;font-size:1.25rem;font-family:"Songti SC",Georgia,serif}
+  .modal .ms{color:var(--ink3);font-size:.76rem;margin-bottom:1.1rem}
+  .field{margin-bottom:.85rem}
+  .field label{display:block;font-size:.74rem;font-weight:600;color:var(--ink2);margin-bottom:.35rem}
+  .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:.75rem;
+     padding:.65rem .85rem;font-size:.9rem;font-family:inherit;outline:none;background:#fff;color:var(--ink)}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green2)}
+  .field input.big{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;padding:.55rem .85rem}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+  .chips{display:flex;gap:.35rem;flex-wrap:wrap}
+  .chips button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:.4rem .8rem;
+     font-size:.78rem;font-family:inherit;cursor:pointer;color:var(--ink2)}
+  .chips button.on{background:var(--green);border-color:var(--green);color:#fff}
+  .actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.2rem}
+  .wan{font-size:.72rem;color:var(--ink3);margin-top:.25rem}
+  .steps{font-size:.78rem;color:var(--ink2);line-height:1.85}
+  .steps b{color:var(--ink)}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:900px){
+    .wrap{padding:1.3rem .9rem 5.5rem}
+    h1{font-size:1.85rem}
+    .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+    .kpi{padding:.9rem 1rem;border-radius:var(--radius-sm)}
+    .kpi .value{font-size:1.38rem}
+    .kpi .label{font-size:.7rem;margin-bottom:.35rem}
+    .grid2{grid-template-columns:1fr}
+    .card{padding:1.05rem 1rem;border-radius:var(--radius-sm)}
+    .catrow{grid-template-columns:minmax(0,1fr) 5.6rem;gap:.5rem}
+    .catrow .col-hide{display:none}
+    th.hide-s,td.hide-s{display:none}
+    .toolbar input[type=search]{flex:1 1 100%}
+    select{max-width:none;flex:1}
+    .fab{display:flex;position:fixed;right:1.1rem;bottom:calc(1.1rem + env(safe-area-inset-bottom));
+      width:3.5rem;height:3.5rem;border-radius:50%;background:var(--orange);color:#fff;border:none;
+      font-size:1.7rem;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(207,107,63,.42);
+      z-index:40;cursor:pointer;line-height:1}
+    .hide-desktop{display:inline-block}
+    .fs button{padding:.3rem .45rem}
+  }
+  @media (max-width:560px){
+    .kpis{grid-template-columns:1fr}
+    .row2{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="top-row">
+      <div>
+        <h1 id="title">装修预算账本</h1>
+        <div class="sub" id="subtitle"></div>
+      </div>
+      <div class="top-actions">
+        <div class="fs" id="fsCtrl" title="字号">
+          <button data-fs="15">小</button><button data-fs="16.5">标准</button>
+          <button data-fs="18">大</button><button data-fs="20">特大</button>
+        </div>
+        <button class="pill" id="baselineBtn">预算基线 · <b id="baselineText"></b></button>
+        <button class="btn orange hide-desktop" id="topAdd">＋ 记一笔</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="overview">预算总览</button>
+    <button class="tab" data-view="items">预算明细</button>
+    <button class="tab" data-view="payments">付款记录</button>
+    <button class="tab" data-view="settings">设置</button>
+  </div>
+
+  <section id="view-overview"></section>
+  <section id="view-items" hidden></section>
+  <section id="view-payments" hidden></section>
+  <section id="view-settings" hidden></section>
+</div>
+
+<button class="fab" id="fab" title="记一笔">＋</button>
+<div class="mask" id="mask"><div class="modal" id="modal"></div></div>
+<input type="file" id="fileInput" accept="application/json,text/html" hidden>
+
+<script src="./qrcode-lib.js"></script>
+<script>
+const SEED = {"meta":{"title":"装修预算账本","subtitle":"硬装、设备、柜体与付款，都记在一个地方。","area":"","baseline":0,"source":""},"fontSize":16.5,"categories":[{"name":"设计测量","budget":0,"note":"设计费、量房、出图"},{"name":"施工半包款","budget":0,"note":"付给工长 / 装修公司的施工款"},{"name":"拆除与清运","budget":0,"note":"砸墙、拆保温、垃圾清运"},{"name":"水电改造","budget":0,"note":"改水、改电、开关插座、网线"},{"name":"防水与美缝","budget":0,"note":"防水、闭水试验、美缝"},{"name":"木工吊顶","budget":0,"note":"吊顶、背景墙基层、烟道"},{"name":"墙面油漆","budget":0,"note":"墙固、腻子、乳胶漆、艺术漆"},{"name":"瓷砖地板","budget":0,"note":"瓷砖、木地板、过门石、窗台石"},{"name":"门窗","budget":0,"note":"入户门、室内门、封阳台、纱窗"},{"name":"全屋定制","budget":0,"note":"橱柜、衣柜、鞋柜、木作"},{"name":"厨卫设备","budget":0,"note":"马桶、花洒、浴室柜、水槽、地漏"},{"name":"家电","budget":0,"note":"冰箱、洗衣机、烟灶、洗碗机、电视"},{"name":"空调地暖","budget":0,"note":"中央空调、地暖、新风"},{"name":"净水软水","budget":0,"note":"前置过滤器、净水器、软水机"},{"name":"智能家居","budget":0,"note":"智能开关、灯带、传感器、网关、电动窗帘"},{"name":"灯具","budget":0,"note":"主灯、筒灯射灯、轨道灯"},{"name":"家具软装","budget":0,"note":"沙发、餐桌、床、床垫、窗帘"},{"name":"其他杂项","budget":0,"note":"说不清的先放这儿"},{"name":"风险预备金","budget":0,"note":"留着应急，尽量别提前动"}],"items":[],"payments":[]};
+const STORE_KEY = 'zhuangxiu-ledger-v2';
+const STAGES = ['定金','阶段款','中期款','尾款','增项','全款'];
+const PRIORITIES = ['必须','重要','可选'];
+const FONT_SIZES = [15, 16.5, 18, 20];
+
+let state = load();
+let view = 'overview';
+let itemFilter = { kw:'', category:'全部', priority:'全部' };
+let payFilter = { kw:'', category:'全部' };
+let canPersist = true;
+const isFile = location.protocol === 'file:';
+
+/* ---------- storage ---------- */
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){ const d = JSON.parse(raw); if(d && d.items && d.payments) return normalize(d); }
+  }catch(e){ canPersist = false; console.warn('本地存储不可用', e); }
+  return normalize(structuredClone(SEED));
+}
+function normalize(d){
+  d.payments = (d.payments||[]).map((p,i)=>({ id:p.id ?? ('p'+(i+1)), ...p }));
+  d.items = (d.items||[]).map((it,i)=>({ id:it.id ?? ('i'+(i+1)), ...it }));
+  d.categories = d.categories||[];
+  d.meta = d.meta||{};
+  if(!d.fontSize) d.fontSize = 16.5;
+  return d;
+}
+function save(){
+  if(!canPersist) return;
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ canPersist = false; render(); }
+}
+function banner(){
+  if(canPersist) return '';
+  return `<div class="note" style="margin:0 0 .9rem">这个浏览器环境不让本地保存（localStorage），
+    现在的改动只存在内存里，刷新就没了。换成 Chrome / Safari 打开同一个地址就正常。</div>`;
+}
+
+/* ---------- helpers ---------- */
+const yuan = n => '¥' + Math.round(n||0).toLocaleString('zh-CN');
+const wan = n => ((n||0)/10000).toFixed(1).replace(/\.0$/,'') + ' 万';
+const pctv = (a,b) => b>0 ? (a/b*100) : 0;
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const paidOfCategory = name => state.payments.filter(p=>p.category===name).reduce((s,p)=>s+ +p.amount,0);
+const paidOfItem = it => state.payments.filter(p=>p.category===it.category && p.item===it.name).reduce((s,p)=>s+ +p.amount,0);
+const totalPaid = () => state.payments.reduce((s,p)=>s+ +p.amount,0);
+const totalBudget = () => state.categories.reduce((s,c)=>s+ +c.budget,0);
+const contractSum = () => state.items.reduce((s,i)=>s+ +(i.contract||0),0);
+const barCls = r => r>100 ? 'over' : (r>=90 && r<99.95) ? 'warn' : '';
+
+/* ---------- render ---------- */
+function render(){
+  document.documentElement.style.fontSize = (state.fontSize||16.5) + 'px';
+  document.getElementById('title').textContent = state.meta.title;
+  document.getElementById('subtitle').textContent = state.meta.subtitle;
+  document.getElementById('baselineText').textContent = yuan(state.meta.baseline);
+  document.querySelectorAll('#fsCtrl button').forEach(b=>
+    b.classList.toggle('on', Math.abs(+b.dataset.fs - (state.fontSize||16.5)) < .1));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===view));
+  ['overview','items','payments','settings'].forEach(v=>{
+    document.getElementById('view-'+v).hidden = (v!==view);
+  });
+  if(view==='overview') renderOverview();
+  if(view==='items') renderItems();
+  if(view==='payments') renderPayments();
+  if(view==='settings') renderSettings();
+}
+
+function renderOverview(){
+  const paid = totalPaid(), budget = totalBudget(), base = +state.meta.baseline;
+  const left = budget - paid, progress = pctv(paid, budget);
+  const rows = state.categories.map(c=>{
+    const p = paidOfCategory(c.name), r = pctv(p, c.budget);
+    const over = p > c.budget;
+    return `<div class="catrow">
+      <div>
+        <div class="catname"><span>${esc(c.name)}</span>
+          <span class="pct">${over? `<span class="over-txt">超 ${yuan(p-c.budget)}</span>` : r.toFixed(0)+'%'}</span></div>
+        <div class="bar ${barCls(r)}"><i style="width:${Math.min(r,100).toFixed(1)}%"></i></div>
+      </div>
+      <div class="num" title="${esc(c.note||'')}">${yuan(c.budget)}<div class="sub2">预算</div></div>
+      <div class="num col-hide">${yuan(p)}<div class="sub2">已付</div></div>
+    </div>`;
+  }).join('');
+  const ctrl = controlPoints(paid, budget);
+  document.getElementById('view-overview').innerHTML = `
+    ${banner()}
+    <div class="kpis">
+      <div class="kpi dark">
+        <div class="label">总预算</div>
+        <div class="value">${yuan(budget)}</div>
+        <div class="foot">预算基线 ${yuan(base)}${base!==budget?` · 差 ${yuan(budget-base)}`:''}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">已经花了</div>
+        <div class="value">${yuan(paid)}</div>
+        <div class="foot">占总预算 ${progress.toFixed(1)}% · ${state.payments.length} 笔</div>
+      </div>
+      <div class="kpi">
+        <div class="label">已签合同</div>
+        <div class="value">${yuan(contractSum())}</div>
+        <div class="foot">已补录合同价的项目</div>
+      </div>
+      <div class="kpi">
+        <div class="label">还能花</div>
+        <div class="value">${yuan(left)}</div>
+        <div class="foot">总预算 − 已经花了</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="eyebrow">Allocation</div>
+        <h2>每项预算花了多少</h2>
+        ${rows}
+      </div>
+      <div class="card control">
+        <div class="eyebrow">Control</div>
+        <h2>现在要注意</h2>
+        ${ctrl.list}
+        <div class="note">${ctrl.note}</div>
+      </div>
+    </div>`;
+}
+
+function controlPoints(paid, budget){
+  const over = state.categories
+    .map(c=>({name:c.name, over: paidOfCategory(c.name)-c.budget}))
+    .filter(x=>x.over>0).sort((a,b)=>b.over-a.over);
+  const settled = it => {
+    const ps = state.payments.filter(p=>p.category===it.category && p.item===it.name);
+    return ps.length>0 && ps.every(p=>p.stage==='全款');
+  };
+  const noContract = state.items
+    .filter(i=> !(+i.contract) && paidOfItem(i)>0 && !settled(i))
+    .map(i=>({...i, p: paidOfItem(i)})).sort((a,b)=>b.p-a.p);
+  const idle = state.categories
+    .filter(c=> paidOfCategory(c.name)===0 && +c.budget>0)
+    .map(c=>({name:c.name, budget:+c.budget}));
+  const committed = state.items.filter(i=>+i.contract>0 && paidOfItem(i) < +i.contract)
+    .map(i=>({...i, rest:+i.contract-paidOfItem(i)})).sort((a,b)=>b.rest-a.rest);
+
+  const lines = [];
+  lines.push(`<div class="ctrl"><span class="ctrlnum">1</span><span>${
+    over.length ? over.slice(0,3).map(x=>`<b>${esc(x.name)}</b> 超了 <b>${yuan(x.over)}</b>`).join('；')
+                : '目前没有哪一项花超'
+  }</span></div>`);
+  lines.push(`<div class="ctrl"><span class="ctrlnum">2</span><span>${
+    noContract.length
+      ? `有 <b>${noContract.length}</b> 个项目只付了定金、还没填合同总价（已付 ${yuan(noContract.reduce((s,i)=>s+i.p,0))}）`
+      : '该填的合同价都填了'
+  }</span></div>`);
+  lines.push(`<div class="ctrl"><span class="ctrlnum">3</span><span>${
+    idle.length ? `${idle.map(x=>`<b>${esc(x.name)}</b>`).join('、')} 还没开始花钱` : '所有项目都已经启动'
+  }</span></div>`);
+
+  const worst = over[0], next = noContract[0], lock = committed[0];
+  let note = worst ? `超支在 ${worst.name}（+${yuan(worst.over)}）。` : '目前没有超支。';
+  if(next) note += `先把「${next.name}」的合同总价补上（已付 ${yuan(next.p)}），剩余预算才算得准。`;
+  if(lock) note += `「${lock.name}」还有 ${yuan(lock.rest)} 没付，下单前先看这里。`;
+  if(idle.length) note += ` ${idle.map(x=>x.name).join('、')} 这块预算还没动。`;
+  return { list: lines.join(''), note: esc(note) };
+}
+
+function renderItems(){
+  const cats = state.categories.map(c=>c.name);
+  const rows = state.items.filter(it=>{
+    if(itemFilter.category!=='全部' && it.category!==itemFilter.category) return false;
+    if(itemFilter.priority!=='全部' && it.priority!==itemFilter.priority) return false;
+    if(itemFilter.kw){
+      const t = `${it.name} ${it.category} ${it.area} ${it.note}`.toLowerCase();
+      if(!t.includes(itemFilter.kw.toLowerCase())) return false;
+    }
+    return true;
+  }).sort((a,b)=> (a.category<b.category?-1:a.category>b.category?1: paidOfItem(b)-paidOfItem(a)));
+  const sum = k => rows.reduce((s,i)=>s+ +(i[k]||0),0);
+
+  const body = rows.map(it=>{
+    const p = paidOfItem(it), bud = +it.budget||0, r = pctv(p,bud);
+    return `<tr>
+      <td><div class="b">${esc(it.category)}</div><div class="sub-cell">${esc(it.area||'')}</div></td>
+      <td><div class="b">${esc(it.name)}</div><div class="sub-cell">${esc(it.note||'')}</div></td>
+      <td class="hide-s"><span class="tag">${esc(it.priority||'必须')}</span></td>
+      <td class="num">${yuan(it.budget)}</td>
+      <td class="num hide-s">${it.contract?yuan(it.contract):'—'}</td>
+      <td class="num">${yuan(p)}</td>
+      <td>
+        <div class="bar ${barCls(r)}"><i style="width:${Math.min(r,100).toFixed(1)}%"></i></div>
+        <div class="sub-cell" style="margin-top:.2rem">${r.toFixed(0)}%${r>100?` · 超 ${yuan(p-bud)}`:''}</div>
+      </td>
+      <td style="white-space:nowrap">
+        <button class="btn mini" data-edit-item="${it.id}">改</button>
+        <button class="btn mini danger" data-del-item="${it.id}">删</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('view-items').innerHTML = `
+    ${banner()}
+    <div class="eyebrow">${rows.length} 个项目</div>
+    <h2 style="font-family:'Songti SC',Georgia,serif;font-size:1.6rem;margin:.1rem 0 1rem">预算明细</h2>
+    <div class="toolbar">
+      <input type="search" id="itemKw" placeholder="搜项目 / 分类 / 区域" value="${esc(itemFilter.kw)}">
+      <select id="itemCat">${['全部',...cats].map(c=>`<option${itemFilter.category===c?' selected':''}>${esc(c)}</option>`).join('')}</select>
+      <select id="itemPri">${['全部',...PRIORITIES].map(c=>`<option${itemFilter.priority===c?' selected':''}>${esc(c)}</option>`).join('')}</select>
+      <button class="btn" id="itemCsv">导出 CSV</button>
+      <button class="btn primary" id="itemAdd">＋ 新增项目</button>
+    </div>
+    <div class="tablecard"><div class="scroll">
+      <table>
+        <thead><tr>
+          <th>分类 / 区域</th><th>项目</th><th class="hide-s">优先级</th><th class="num">预算</th>
+          <th class="num hide-s">合同</th><th class="num">已付</th><th>进度</th><th></th>
+        </tr></thead>
+        <tbody>${body || `<tr><td colspan="8" class="empty">没有符合条件的项目</td></tr>`}</tbody>
+        ${rows.length?`<tfoot><tr>
+          <td colspan="3">合计 ${rows.length} 项</td>
+          <td class="num">${yuan(sum('budget'))}</td>
+          <td class="num hide-s">${yuan(sum('contract'))}</td>
+          <td class="num">${yuan(rows.reduce((s,i)=>s+paidOfItem(i),0))}</td>
+          <td colspan="2"></td></tr></tfoot>`:''}
+      </table>
+    </div></div>
+    <div class="hint" style="margin-top:.8rem">「已付」是付款记录自动汇总的，在付款记录里记一笔，这里和总览会一起变。</div>`;
+
+  document.getElementById('itemKw').oninput = e => { itemFilter.kw = e.target.value; renderItems(); };
+  document.getElementById('itemCat').onchange = e => { itemFilter.category = e.target.value; renderItems(); };
+  document.getElementById('itemPri').onchange = e => { itemFilter.priority = e.target.value; renderItems(); };
+  document.getElementById('itemCsv').onclick = () => exportCSV('items');
+  document.getElementById('itemAdd').onclick = () => itemModal();
+  document.querySelectorAll('[data-edit-item]').forEach(b=>b.onclick = () => itemModal(state.items.find(i=>i.id===b.dataset.editItem)));
+  document.querySelectorAll('[data-del-item]').forEach(b=>b.onclick = () => {
+    const it = state.items.find(i=>i.id===b.dataset.delItem);
+    if(confirm(`删除项目「${it.name}」？付款记录会保留。`)){
+      state.items = state.items.filter(i=>i.id!==it.id); save(); renderItems();
+    }
+  });
+}
+
+function renderPayments(){
+  const cats = state.categories.map(c=>c.name);
+  const rows = state.payments.filter(p=>{
+    if(payFilter.category!=='全部' && p.category!==payFilter.category) return false;
+    if(payFilter.kw){
+      const t = `${p.item} ${p.category} ${p.note} ${p.stage}`.toLowerCase();
+      if(!t.includes(payFilter.kw.toLowerCase())) return false;
+    }
+    return true;
+  }).sort((a,b)=> a.date<b.date?1:a.date>b.date?-1:0);
+  const sum = rows.reduce((s,p)=>s+ +p.amount,0);
+  const body = rows.map(p=>`<tr>
+      <td style="white-space:nowrap">${esc(p.date)}</td>
+      <td><div class="b">${esc(p.item)}</div><div class="sub-cell">${esc(p.category)}</div></td>
+      <td class="hide-s"><span class="tag">${esc(p.stage)}</span></td>
+      <td class="num">${yuan(p.amount)}</td>
+      <td>${esc(p.note||'')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn mini" data-edit-pay="${p.id}">改</button>
+        <button class="btn mini danger" data-del-pay="${p.id}">删</button>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('view-payments').innerHTML = `
+    ${banner()}
+    <div class="eyebrow">Cash flow</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.8rem;
+                margin:.1rem 0 1rem;flex-wrap:wrap">
+      <h2 style="font-family:'Songti SC',Georgia,serif;font-size:1.6rem;margin:0">付款记录</h2>
+      <button class="btn orange" id="payAdd">＋ 记一笔</button>
+    </div>
+    <div class="toolbar">
+      <input type="search" id="payKw" placeholder="搜项目 / 分类 / 备注" value="${esc(payFilter.kw)}">
+      <select id="payCat">${['全部',...cats].map(c=>`<option${payFilter.category===c?' selected':''}>${esc(c)}</option>`).join('')}</select>
+      <button class="btn" id="payCsv">导出 CSV</button>
+    </div>
+    <div class="tablecard"><div class="scroll">
+      <table>
+        <thead><tr>
+          <th>日期</th><th>项目</th><th class="hide-s">阶段</th><th class="num">金额</th><th>备注</th><th></th>
+        </tr></thead>
+        <tbody>${body || `<tr><td colspan="6" class="empty">还没有付款记录</td></tr>`}</tbody>
+        ${rows.length?`<tfoot><tr><td colspan="3">合计 ${rows.length} 笔</td>
+          <td class="num">${yuan(sum)}</td><td colspan="2"></td></tr></tfoot>`:''}
+      </table>
+    </div></div>`;
+
+  document.getElementById('payKw').oninput = e => { payFilter.kw = e.target.value; renderPayments(); };
+  document.getElementById('payCat').onchange = e => { payFilter.category = e.target.value; renderPayments(); };
+  document.getElementById('payCsv').onclick = () => exportCSV('payments');
+  document.getElementById('payAdd').onclick = () => paymentModal();
+  document.querySelectorAll('[data-edit-pay]').forEach(b=>b.onclick = () => paymentModal(state.payments.find(p=>p.id===b.dataset.editPay)));
+  document.querySelectorAll('[data-del-pay]').forEach(b=>b.onclick = () => {
+    const p = state.payments.find(x=>x.id===b.dataset.delPay);
+    if(confirm(`删除 ${p.date} 的「${p.item}」${yuan(p.amount)}？`)){
+      state.payments = state.payments.filter(x=>x.id!==p.id); save(); renderPayments();
+    }
+  });
+}
+
+function renderSettings(){
+  const paid = totalPaid();
+  const mobileCard = isFile ? '' : `
+    <div class="card" style="margin-bottom:1rem">
+      <div class="eyebrow">Mobile</div>
+      <h2 style="margin-bottom:.4rem">在手机上打开</h2>
+      <div class="steps" style="margin-bottom:.9rem">手机连同一个 Wi-Fi，扫码打开，然后添加到主屏幕当 App 用。</div>
+      <div style="display:flex;gap:1.1rem;flex-wrap:wrap;align-items:flex-start">
+        <div id="qrBox" style="background:#fff;border:1px solid var(--line);border-radius:.9rem;
+             padding:.7rem;line-height:0;min-width:6rem;min-height:6rem">
+          <div class="hint">正在生成…</div>
+        </div>
+        <div style="flex:1 1 15rem;min-width:14rem">
+          <div class="field"><label>扫码地址</label><input id="mobileUrl" type="text"></div>
+          <div class="toolbar" style="margin:0 0 .5rem">
+            <button class="btn" id="copyUrl">复制地址</button>
+            <button class="btn" id="regenQr">重新生成</button>
+          </div>
+          <div class="steps">
+            <b>iPhone</b>：Safari 打开 → 分享 → 添加到主屏幕<br>
+            <b>Android</b>：Chrome 打开 → ⋮ → 添加到主屏幕<br>
+            <span id="ipHint" class="hint"></span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('view-settings').innerHTML = `
+    ${banner()}
+    <div class="eyebrow">Settings</div>
+    <h2 style="font-family:'Songti SC',Georgia,serif;font-size:1.6rem;margin:.1rem 0 1rem">设置</h2>
+    ${mobileCard}
+    <div class="card" style="margin-bottom:1rem">
+      <div class="eyebrow">Reading</div>
+      <h2 style="margin-bottom:.5rem">字号</h2>
+      <div class="chips" id="fsBig">
+        ${FONT_SIZES.map(f=>`<button data-fs="${f}" ${Math.abs(f-(state.fontSize||16.5))<.1?'class="on"':''}>${
+          f===15?'小':f===16.5?'标准':f===18?'大':'特大'}</button>`).join('')}
+      </div>
+      <div class="hint" style="margin-top:.5rem">设置会记住，下次打开还是这个字号。</div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Data</div>
+      <h2 style="margin-bottom:.5rem">数据与备份</h2>
+      <div class="hint" style="margin-bottom:.9rem">
+        全部数据只存在这台设备的浏览器里，不联网、不上传。换设备或清缓存前先导出备份。<br>
+        当前：${state.items.length} 个项目 · ${state.payments.length} 笔付款 · 已花 ${yuan(paid)}
+      </div>
+      <div class="toolbar" style="margin-bottom:.6rem">
+        <button class="btn primary" id="expJson">导出备份（JSON）</button>
+        <button class="btn" id="impJson">导入备份</button>
+        <button class="btn" id="expOffline">导出离线版（单文件）</button>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="expItems">预算明细 CSV</button>
+        <button class="btn" id="expPays">付款记录 CSV</button>
+        <button class="btn danger" id="reset">恢复初始数据</button>
+      </div>
+      <div class="hint" style="margin-top:.7rem">
+        「导出离线版」会生成一个完整的单文件网页（数据一起打包），拷到手机上直接打开就能用，不需要电脑、不需要联网。<br>
+        来源：${esc(state.meta.source||'—')}
+      </div>
+    </div>`;
+
+  document.querySelectorAll('#fsBig button').forEach(b=>b.onclick = () => {
+    state.fontSize = +b.dataset.fs; save(); render();
+  });
+  document.getElementById('expJson').onclick = () => download('装修账本备份.json', JSON.stringify(state,null,2), 'application/json');
+  document.getElementById('impJson').onclick = () => document.getElementById('fileInput').click();
+  document.getElementById('expOffline').onclick = exportOffline;
+  document.getElementById('expItems').onclick = () => exportCSV('items');
+  document.getElementById('expPays').onclick = () => exportCSV('payments');
+  document.getElementById('reset').onclick = () => {
+    if(confirm('恢复成最初导入的数据？现在的改动会丢（建议先导出备份）。')){
+      state = normalize(structuredClone(SEED)); state.fontSize = 16.5; save(); render();
+    }
+  };
+  if(!isFile) initMobileCard();
+}
+
+async function initMobileCard(){
+  const input = document.getElementById('mobileUrl');
+  if(!input) return;
+  let url = state.meta.mobileUrl || '';
+  try{
+    const r = await fetch('./lan-url.txt', {cache:'no-store'});
+    if(r.ok){ const t = (await r.text()).trim(); if(t) url = t; }
+  }catch(e){}
+  if(!url) url = location.origin + location.pathname;
+  input.value = url;
+  if(location.hostname==='127.0.0.1' || location.hostname==='localhost'){
+    document.getElementById('ipHint').innerHTML =
+      '<span style="color:var(--orange)">把上面这个地址发到手机上打开，再按下面的方法加到主屏幕。</span>';
+  }
+  const draw = () => {
+    const box = document.getElementById('qrBox');
+    try{
+      const qr = qrcode(0,'M'); qr.addData(input.value.trim()); qr.make();
+      box.innerHTML = qr.createSvgTag({cellSize:6, margin:4, scalable:true});
+      const svg = box.querySelector('svg');
+      if(svg){ svg.setAttribute('width','196'); svg.setAttribute('height','196'); svg.style.display='block'; }
+    }catch(e){ box.innerHTML = '<div class="hint">地址太长</div>'; }
+  };
+  draw();
+  input.oninput = draw;
+  input.onchange = () => { state.meta.mobileUrl = input.value.trim(); save(); };
+  document.getElementById('regenQr').onclick = () => { state.meta.mobileUrl = input.value.trim(); save(); draw(); };
+  document.getElementById('copyUrl').onclick = async () => {
+    try{ await navigator.clipboard.writeText(input.value.trim()); alert('已复制：'+input.value.trim()); }
+    catch(e){ input.select(); }
+  };
+}
+
+/* ---------- modals ---------- */
+const mask = document.getElementById('mask'), modalEl = document.getElementById('modal');
+const closeModal = () => mask.classList.remove('show');
+mask.onclick = e => { if(e.target===mask) closeModal(); };
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+
+function itemModal(item){
+  const cats = state.categories.map(c=>c.name);
+  const it = item || { id:'i'+Date.now(), category:cats[0], name:'', area:'全屋', priority:'必须', budget:0, contract:0, note:'' };
+  modalEl.innerHTML = `
+    <h3>${item?'改项目':'新增项目'}</h3>
+    <div class="ms">预算 = 这个项目打算花多少；已付会自动从付款记录里汇总。</div>
+    <div class="field"><label>项目名称</label><input id="fName" value="${esc(it.name)}" placeholder="如：中央空调"></div>
+    <div class="field"><label>属于哪一类</label>
+      <select id="fCat">${cats.map(c=>`<option${it.category===c?' selected':''}>${esc(c)}</option>`).join('')}</select></div>
+    <div class="row2">
+      <div class="field"><label>预算金额</label><input id="fBudget" type="number" inputmode="decimal" value="${+it.budget||0}"><div class="wan" id="wB"></div></div>
+      <div class="field"><label>合同总价（没签就留 0）</label><input id="fContract" type="number" inputmode="decimal" value="${+it.contract||0}"><div class="wan" id="wC"></div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>用在哪儿</label><input id="fArea" value="${esc(it.area||'')}" placeholder="全屋 / 厨房 / 主卫"></div>
+      <div class="field"><label>重要程度</label>
+        <select id="fPri">${PRIORITIES.map(p=>`<option${it.priority===p?' selected':''}>${esc(p)}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>备注</label><textarea id="fNote" rows="2">${esc(it.note||'')}</textarea></div>
+    <div class="actions"><button class="btn" id="mCancel">取消</button><button class="btn primary" id="mSave">保存</button></div>`;
+  const sync = () => {
+    document.getElementById('wB').textContent = (+document.getElementById('fBudget').value||0) ? wan(+document.getElementById('fBudget').value) : '';
+    document.getElementById('wC').textContent = (+document.getElementById('fContract').value||0) ? wan(+document.getElementById('fContract').value) : '';
+  };
+  document.getElementById('fBudget').oninput = sync; document.getElementById('fContract').oninput = sync; sync();
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = () => {
+    const next = { ...it,
+      name: document.getElementById('fName').value.trim(),
+      category: document.getElementById('fCat').value,
+      budget: +document.getElementById('fBudget').value||0,
+      contract: +document.getElementById('fContract').value||0,
+      area: document.getElementById('fArea').value.trim(),
+      priority: document.getElementById('fPri').value,
+      note: document.getElementById('fNote').value.trim() };
+    if(!next.name){ alert('项目名称不能空着'); return; }
+    const idx = state.items.findIndex(i=>i.id===next.id);
+    if(idx>=0) state.items[idx] = next; else state.items.push(next);
+    save(); closeModal(); render();
+  };
+  mask.classList.add('show');
+}
+
+function paymentModal(payment){
+  const cats = state.categories.map(c=>c.name);
+  const p = payment || { id:'p'+Date.now(), date:today(), category:cats[0], item:'', stage:'全款', amount:0, note:'' };
+  const itemOptions = [...new Set(state.items.map(i=>i.name))];
+  modalEl.innerHTML = `
+    <h3>${payment?'改这一笔':'记一笔'}</h3>
+    <div class="ms">只记四件事：多少钱、花在哪个项目、什么时候、什么阶段。</div>
+    <div class="field"><label>金额</label>
+      <input id="fAmount" class="big" type="number" inputmode="decimal" value="${+p.amount||0}" placeholder="0"><div class="wan" id="wA"></div></div>
+    <div class="field"><label>花在哪个项目</label>
+      <input id="fItem" list="itemList" value="${esc(p.item)}" placeholder="选一个或直接输入">
+      <datalist id="itemList">${itemOptions.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist></div>
+    <div class="field"><label>属于哪一类</label>
+      <select id="fCat">${cats.map(c=>`<option${p.category===c?' selected':''}>${esc(c)}</option>`).join('')}</select></div>
+    <div class="row2">
+      <div class="field"><label>日期</label><input id="fDate" type="date" value="${esc(p.date)}"></div>
+      <div class="field"><label>阶段</label>
+        <select id="fStage">${STAGES.map(s=>`<option${p.stage===s?' selected':''}>${esc(s)}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>备注（可不填）</label><textarea id="fNote" rows="2">${esc(p.note||'')}</textarea></div>
+    <div class="actions"><button class="btn" id="mCancel">取消</button><button class="btn orange" id="mSave">保存</button></div>`;
+  const amt = document.getElementById('fAmount');
+  const sync = () => document.getElementById('wA').textContent = (+amt.value||0) ? wan(+amt.value) : '';
+  amt.oninput = sync; sync();
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = () => {
+    const next = { ...p,
+      amount: +amt.value||0,
+      item: document.getElementById('fItem').value.trim() || '未命名项目',
+      category: document.getElementById('fCat').value,
+      date: document.getElementById('fDate').value || today(),
+      stage: document.getElementById('fStage').value,
+      note: document.getElementById('fNote').value.trim() };
+    if(!next.amount){ alert('金额不能是 0'); return; }
+    const idx = state.payments.findIndex(x=>x.id===next.id);
+    if(idx>=0) state.payments[idx] = next; else state.payments.push(next);
+    save(); closeModal(); render();
+  };
+  mask.classList.add('show');
+  setTimeout(()=>amt.select&&amt.select(), 60);
+}
+
+function baselineModal(){
+  modalEl.innerHTML = `
+    <h3>预算基线</h3>
+    <div class="ms">你给自己定的装修总上限，页面会拿它和分类预算合计对照。</div>
+    <div class="field"><label>预算基线</label><input id="fBase" class="big" type="number" inputmode="decimal" value="${+state.meta.baseline}"><div class="wan" id="wBase"></div></div>
+    <div class="field"><label>副标题</label><input id="fSub" value="${esc(state.meta.subtitle)}"></div>
+    <div class="actions"><button class="btn" id="mCancel">取消</button><button class="btn primary" id="mSave">保存</button></div>`;
+  const b = document.getElementById('fBase');
+  const sync = () => document.getElementById('wBase').textContent = (+b.value||0) ? wan(+b.value) : '';
+  b.oninput = sync; sync();
+  document.getElementById('mCancel').onclick = closeModal;
+  document.getElementById('mSave').onclick = () => {
+    state.meta.baseline = +b.value||0;
+    state.meta.subtitle = document.getElementById('fSub').value;
+    save(); closeModal(); render();
+  };
+  mask.classList.add('show');
+}
+
+/* ---------- export / import ---------- */
+function download(name, text, type){
+  const url = URL.createObjectURL(new Blob([text], {type: type+';charset=utf-8'}));
+  const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+const csvCell = v => { const s = String(v==null?'':v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+function exportCSV(kind){
+  let rows;
+  if(kind==='items'){
+    rows = [['分类','区域','项目','优先级','预算','合同','已付','进度']];
+    state.items.forEach(i=>{
+      const p = paidOfItem(i), b = +i.budget||0;
+      rows.push([i.category,i.area,i.name,i.priority,b,i.contract,p,(b?(p/b*100).toFixed(1):'0')+'%']);
+    });
+  }else{
+    rows = [['日期','分类','项目','阶段','金额','备注']];
+    state.payments.forEach(p=>rows.push([p.date,p.category,p.item,p.stage,p.amount,p.note||'']));
+  }
+  download(kind==='items'?'预算明细.csv':'付款记录.csv',
+    '\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\n'), 'text/csv');
+}
+async function exportOffline(){
+  try{
+    const src = await (await fetch(location.pathname, {cache:'no-store'})).text();
+    let lib = '';
+    try{ lib = await (await fetch('./qrcode-lib.js', {cache:'force-cache'})).text(); }catch(e){}
+    let out = src.replace(/const SEED = [\s\S]*?;\n/, 'const SEED = ' + JSON.stringify(state) + ';\n');
+    if(lib) out = out.replace('<script src="./qrcode-lib.js"><\/script>', '<script>' + lib + '<\/script>');
+    out = out.replace(/<link rel="manifest"[^>]*>\s*/, '')
+             .replace(/<link rel="apple-touch-icon"[^>]*>\s*/, '')
+             .replace(/<link rel="icon"[^>]*>\s*/, '');
+    download('装修账本-离线版.html', out, 'text/html');
+  }catch(e){
+    alert('导出失败：'+e.message+'\n（这个功能要在 http 打开的页面上用，不能用本地文件打开）');
+  }
+}
+document.getElementById('fileInput').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const d = JSON.parse(reader.result);
+      if(!d.items || !d.payments) throw new Error('文件格式不对');
+      state = normalize(d); save(); render(); alert('导入成功');
+    }catch(err){ alert('导入失败：'+err.message); }
+  };
+  reader.readAsText(f); e.target.value = '';
+};
+
+/* ---------- bind ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.onclick = () => { view = t.dataset.view; render(); window.scrollTo({top:0,behavior:'smooth'}); });
+document.querySelectorAll('#fsCtrl button').forEach(b=>b.onclick = () => {
+  state.fontSize = +b.dataset.fs; save(); render();
+});
+document.getElementById('baselineBtn').onclick = baselineModal;
+document.getElementById('fab').onclick = () => paymentModal();
+document.getElementById('topAdd').onclick = () => paymentModal();
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+if('serviceWorker' in navigator && location.protocol!=='file:'){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+render();
+</script>
+</body>
+</html>
